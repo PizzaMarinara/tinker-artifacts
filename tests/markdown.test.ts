@@ -51,6 +51,12 @@ test("blockquote and hr", () => {
   expect(renderMd("---")).toBe("<hr>");
 });
 
+test("unsafe url schemes are not linked", () => {
+  expect(renderMd("[x](javascript:alert(1))")).toBe("<p>x</p>");
+  expect(renderMd("![x](javascript:alert(1))")).toBe("<p>x</p>");
+  expect(renderMd("[rel](/docs/page)")).toBe('<p><a href="/docs/page" target="_blank" rel="noopener">rel</a></p>');
+});
+
 test("mdPage escapes title and wraps body", () => {
   const page = mdPage("<t>", "<p>x</p>");
   expect(page).toContain("<title>&lt;t&gt;</title>");

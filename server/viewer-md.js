@@ -10,10 +10,22 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+function safeUrl(u) {
+  return /^(https?:|mailto:|#|\/)/i.test(u) ? u : "";
+}
+
 function inlineMd(s) {
   s = escapeHtml(s);
-  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img alt="$1" src="$2">');
-  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // URL group tolerates one level of balanced parens (e.g. Wikipedia-style
+  // links) while still stopping at the real closing paren of the markdown
+  // link/image syntax.
+  var URL_RE = "((?:[^\\s()]|\\([^()]*\\))+)";
+  s = s.replace(new RegExp("!\\[([^\\]]*)\\]\\(" + URL_RE + "\\)", "g"), function (_m, alt, url) {
+    return safeUrl(url) ? '<img alt="' + alt + '" src="' + url + '">' : alt;
+  });
+  s = s.replace(new RegExp("\\[([^\\]]+)\\]\\(" + URL_RE + "\\)", "g"), function (_m, text, url) {
+    return safeUrl(url) ? '<a href="' + url + '" target="_blank" rel="noopener">' + text + "</a>" : text;
+  });
   s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
