@@ -1,0 +1,14 @@
+{
+  "name": "tinker-artifacts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "gen": "bun scripts/gen-viewer.ts",
+    "dev": "bun run gen && bunx wrangler dev",
+    "deploy": "bun run gen && bunx wrangler deploy",
+    "smoke": "bun scripts/smoke.ts"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}
