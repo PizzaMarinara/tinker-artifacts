@@ -30,6 +30,18 @@ test("PUT without auth is rejected", async () => {
   expect((await worker.fetch(putReq("data", { token: "wrong" }), env)).status).toBe(401);
 });
 
+test("PUT fails closed when AUTH_TOKEN is unset", async () => {
+  const { env } = makeEnv();
+  env.AUTH_TOKEN = "";
+  expect((await worker.fetch(putReq("data", { token: "undefined" }), env)).status).toBe(401);
+  expect((await worker.fetch(putReq("data", { token: "" }), env)).status).toBe(401);
+});
+
+test("PUT rejects ttl values that resolve as inherited Object properties", async () => {
+  const { env } = makeEnv();
+  expect((await worker.fetch(putReq("x", { ttl: "toString" }), env)).status).toBe(400);
+});
+
 test("PUT stores blob with default 7d TTL and returns id", async () => {
   const { env, store } = makeEnv();
   const res = await worker.fetch(putReq("ciphertext-bytes"), env);

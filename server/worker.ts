@@ -26,11 +26,11 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "PUT" && url.pathname === "/api/artifacts") {
-      if (request.headers.get("Authorization") !== `Bearer ${env.AUTH_TOKEN}`) {
+      if (!env.AUTH_TOKEN || request.headers.get("Authorization") !== `Bearer ${env.AUTH_TOKEN}`) {
         return Response.json({ error: "unauthorized" }, { status: 401 });
       }
       const ttl = url.searchParams.get("ttl") ?? "7d";
-      const expirationTtl = TTL_SECONDS[ttl];
+      const expirationTtl = Object.hasOwn(TTL_SECONDS, ttl) ? TTL_SECONDS[ttl] : undefined;
       if (!expirationTtl) return Response.json({ error: "invalid ttl" }, { status: 400 });
       const body = await request.arrayBuffer();
       if (body.byteLength === 0) return Response.json({ error: "empty body" }, { status: 400 });
@@ -45,7 +45,11 @@ export default {
       const blob = await env.ARTIFACTS.get(id, "arrayBuffer");
       if (!blob) return Response.json({ error: "not found" }, { status: 404 });
       return new Response(blob, {
-        headers: { "Content-Type": "application/octet-stream", "Cache-Control": "no-store" },
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "Cache-Control": "no-store",
+          "X-Content-Type-Options": "nosniff",
+        },
       });
     }
 
@@ -59,6 +63,7 @@ export default {
             "connect-src 'self'; frame-src 'self' data: blob: about:",
           "Referrer-Policy": "no-referrer",
           "X-Robots-Tag": "noindex",
+          "X-Content-Type-Options": "nosniff",
         },
       });
     }
