@@ -1,3 +1,5 @@
+import viewerHtml from "./viewer-html";
+
 // Minimal KV surface we use — avoids the @cloudflare/workers-types devDependency.
 export interface KVNamespace {
   put(key: string, value: ArrayBuffer, opts: { expirationTtl: number }): Promise<void>;
@@ -44,6 +46,20 @@ export default {
       if (!blob) return Response.json({ error: "not found" }, { status: 404 });
       return new Response(blob, {
         headers: { "Content-Type": "application/octet-stream", "Cache-Control": "no-store" },
+      });
+    }
+
+    if (request.method === "GET" && url.pathname.startsWith("/a/")) {
+      return new Response(viewerHtml, {
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Content-Security-Policy":
+            "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; " +
+            "img-src data: blob:; font-src data:; media-src data: blob:; " +
+            "connect-src 'self'; frame-src 'self' data: blob: about:",
+          "Referrer-Policy": "no-referrer",
+          "X-Robots-Tag": "noindex",
+        },
       });
     }
 
