@@ -5,3 +5,7 @@ compatibility_date = "2026-07-01"
 [[kv_namespaces]]
 binding = "ARTIFACTS"
 id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[vars]
+TTL_OPTIONS = "1h,1d,7d,30d"
+DEFAULT_TTL = "7d"

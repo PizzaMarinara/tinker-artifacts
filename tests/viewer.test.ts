@@ -2,10 +2,13 @@ import { expect, test } from "bun:test";
 import worker, { type Env } from "../server/worker";
 
 const env: Env = {
-  AUTH_TOKEN: "test-token",
+  UPLOAD_KEYS: "",
   ARTIFACTS: {
     async put() {},
-    async get() { return null; },
+    async getWithMetadata() {
+      return { value: null, metadata: null };
+    },
+    async delete() {},
   },
 };
 
