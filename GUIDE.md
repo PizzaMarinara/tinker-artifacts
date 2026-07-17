@@ -249,15 +249,4 @@ The viewer/delete/landing pages are authored as `.html` (plus `viewer-md.js`) an
 
 ## Development
 
-```sh
-cp .dev.vars.example .dev.vars
-bun cli/tinker-share.ts keygen dev        # paste the printed line into .dev.vars as UPLOAD_KEYS
-bun run dev                               # Cloudflare dev (wrangler) on :8787
-bun run start                             # OR the self-host server on :8080 (bun:sqlite)
-bun test                                  # full test suite
-TINKER_SHARE_URL=http://localhost:8787 bun run smoke   # end-to-end lifecycle check
-```
-
-- **After editing any page source** (`server/viewer.html`, `server/delete.html`, `server/landing.html`, `server/viewer-md.js`), run `bun run gen` to regenerate the `server/*-html.ts` modules. The `dev`, `deploy`, `start`, and `smoke` scripts run it automatically; commit the regenerated files.
-- **Redis adapter tests** are skipped unless `REDIS_URL` is set: `REDIS_URL=redis://localhost:6379 bun test tests/redis.test.ts`.
-- Zero runtime dependencies is a hard rule; the only devDependency is `wrangler`.
+Setup, test commands, the generated-page workflow, and contribution ground rules live in [CONTRIBUTING.md](CONTRIBUTING.md). The short version: `bun install --frozen-lockfile`, `bun test`, and run `bun run gen` after editing any page source (never edit the generated `server/*-html.ts` files by hand). Zero runtime dependencies is a hard rule.

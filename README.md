@@ -103,7 +103,8 @@ Point your harness at [`skills/share-artifact/SKILL.md`](skills/share-artifact/S
 
 - **[Full guide](GUIDE.md)** covers encryption internals, the threat model, the deployment reference, the CLI reference, configuration, and architecture.
 - **[Agent skill](skills/share-artifact/SKILL.md)** is how coding agents use it.
-- **[Contributing & development](GUIDE.md#development)** covers tests, the page-generation step, and project layout.
+- **[Contributing](CONTRIBUTING.md)** covers setup, tests, and the page-generation workflow.
+- **[Security policy](SECURITY.md)** is how to report a vulnerability privately, and what's in scope.
 
 ## License
 
