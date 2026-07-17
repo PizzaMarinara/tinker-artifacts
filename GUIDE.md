@@ -196,7 +196,14 @@ CLI configuration lives in `~/.config/tinker-share/config` (written by `keygen`)
 
 ## CLI reference
 
-`cli/tinker-share.ts` — run with `bun cli/tinker-share.ts <cmd>` or an alias.
+Install `tinker-share` onto your `PATH` by packing and globally installing the package (Bun symlinks the executable into `~/.bun/bin`):
+
+```sh
+bun pm pack --destination /tmp
+bun install -g /tmp/tinker-artifacts-0.1.0.tgz
+```
+
+During development you can instead run it straight from the checkout: `bun cli/tinker-share.ts <cmd>`.
 
 ### `keygen [name]`
 

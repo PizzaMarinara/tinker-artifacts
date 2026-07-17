@@ -104,3 +104,16 @@ test("deleteArtifact calls DELETE with the fragment token", async () => {
 test("deleteArtifact rejects non-deletion URLs", async () => {
   await expect(deleteArtifact("https://x.test/a/abc#key")).rejects.toThrow("deletion URL");
 });
+
+test("packed package installs a runnable tinker-share bin", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "tinker-pack-"));
+  const pack = Bun.spawnSync(["bun", "pm", "pack", "--destination", dir], { cwd: import.meta.dir + "/.." });
+  expect(pack.exitCode).toBe(0);
+  const tgz = new Bun.Glob("*.tgz").scanSync(dir).next().value as string;
+  expect(tgz).toBeDefined();
+  const install = Bun.spawnSync(["bun", "install", join(dir, tgz)], { cwd: dir });
+  expect(install.exitCode).toBe(0);
+  const run = Bun.spawnSync([join(dir, "node_modules", ".bin", "tinker-share")], { cwd: dir });
+  expect(run.exitCode).toBe(1);
+  expect(run.stderr.toString()).toContain("usage: tinker-share");
+}, 30000);

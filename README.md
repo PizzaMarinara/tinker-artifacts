@@ -52,11 +52,17 @@ For Docker, Redis, TLS behind a reverse proxy, and adding more uploaders, see th
 
 ### Share something
 
+Install the CLI onto your `PATH` (from the checkout; after this the clone is no longer needed):
+
+```sh
+bun pm pack --destination /tmp
+bun install -g /tmp/tinker-artifacts-0.1.0.tgz
+```
+
 `keygen` (above) already saved your signing key to `~/.config/tinker-share/config`. Point the CLI at your server and push:
 
 ```sh
 export TINKER_SHARE_URL=https://your-instance.example.com
-alias tinker-share="bun /path/to/tinker-artifacts/cli/tinker-share.ts"
 
 tinker-share push report.html            # default TTL (7d)
 tinker-share push notes.md --ttl 1h      # 1h | 1d | 7d | 30d

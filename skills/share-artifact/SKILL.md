@@ -11,7 +11,7 @@ Share a self-contained HTML or Markdown file as an encrypted, expiring link; opt
 
 The CLI signs uploads with an Ed25519 key (RFC 9421). Config lives in env vars or `~/.config/tinker-share/config`.
 
-1. Needs `TINKER_SHARE_URL` (the instance URL) plus a key (`TINKER_SHARE_KEY` / `TINKER_SHARE_KEY_NAME`).
+1. Needs `tinker-share` on `PATH` (from a repo checkout: `bun pm pack --destination /tmp && bun install -g /tmp/tinker-artifacts-0.1.0.tgz`; or run `bun <checkout>/cli/tinker-share.ts` directly), `TINKER_SHARE_URL` (the instance URL), plus a key (`TINKER_SHARE_KEY` / `TINKER_SHARE_KEY_NAME`).
 2. No key yet → run `tinker-share keygen <name>` and give the user the printed `name:pubkey` line: "send this to your instance operator to add to UPLOAD_KEYS".
 3. Push returns HTTP 401 → the key isn't registered (or was revoked). Ask the user to confirm the line was added. If the line was lost, run `keygen` again (this REPLACES the machine's key — the old registration becomes useless) and send the new line.
 

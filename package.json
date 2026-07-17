@@ -1,7 +1,23 @@
 {
   "name": "tinker-artifacts",
+  "version": "0.1.0",
+  "description": "End-to-end-encrypted, self-expiring share links for HTML & Markdown artifacts. Self-hosted.",
+  "license": "MIT",
   "private": true,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PizzaMarinara/tinker-artifacts.git"
+  },
+  "bugs": "https://github.com/PizzaMarinara/tinker-artifacts/issues",
+  "homepage": "https://github.com/PizzaMarinara/tinker-artifacts#readme",
+  "bin": {
+    "tinker-share": "cli/tinker-share.ts"
+  },
+  "files": [
+    "cli",
+    "shared"
+  ],
   "scripts": {
     "gen": "bun scripts/gen-pages.ts",
     "dev": "bun run gen && bunx wrangler dev",
