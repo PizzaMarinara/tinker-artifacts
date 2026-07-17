@@ -1,6 +1,6 @@
 # Tinker — Guide
 
-Reference material beyond the [README](../README.md) quick start.
+Reference material beyond the [README](README.md) quick start.
 
 ## Contents
 
@@ -55,23 +55,23 @@ The "special ink" is not a metaphorical hand-wave — it's how URLs actually wor
 
 All cryptography uses the [WebCrypto API](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto) — the same audited primitives built into every modern browser and runtime. No crypto libraries, no hand-rolled algorithms.
 
-Per artifact, the CLI ([`cli/tinker-share.ts`](../cli/tinker-share.ts)):
+Per artifact, the CLI ([`cli/tinker-share.ts`](cli/tinker-share.ts)):
 
 1. Builds a plaintext envelope `{"type": "html"|"md", "name": ..., "content": ...}`, so even the **filename and file type** are encrypted.
 2. Generates a fresh random **256-bit key** and **96-bit IV** from the OS CSPRNG (`crypto.getRandomValues`). Keys are never reused across artifacts.
-3. Encrypts with **AES-256-GCM**. GCM is *authenticated* encryption: the ciphertext carries an integrity tag, so a blob that was tampered with (or a wrong key) doesn't decrypt into garbage; decryption *fails*, loudly. A test flips one ciphertext bit and asserts exactly that ([`tests/crypto.test.ts`](../tests/crypto.test.ts)).
+3. Encrypts with **AES-256-GCM**. GCM is *authenticated* encryption: the ciphertext carries an integrity tag, so a blob that was tampered with (or a wrong key) doesn't decrypt into garbage; decryption *fails*, loudly. A test flips one ciphertext bit and asserts exactly that ([`tests/crypto.test.ts`](tests/crypto.test.ts)).
 4. Uploads `IV ‖ ciphertext` as an opaque byte blob. The server generates a random 128-bit id for it — the id is unrelated to the key, so knowing the id (which the server does) tells you nothing about the key (which it doesn't).
 5. Prints `https://<host>/a/<id>#<key>` with the key base64url-encoded in the fragment.
 
-The viewer page ([`server/viewer.html`](../server/viewer.html)) mirrors this in reverse: it reads the key from `location.hash`, fetches the ciphertext, decrypts with WebCrypto in the browser, and renders the result inside an `<iframe sandbox>` with no same-origin access — so even the artifact's own JavaScript can't touch the viewer page, your cookies, or the API.
+The viewer page ([`server/viewer.html`](server/viewer.html)) mirrors this in reverse: it reads the key from `location.hash`, fetches the ciphertext, decrypts with WebCrypto in the browser, and renders the result inside an `<iframe sandbox>` with no same-origin access — so even the artifact's own JavaScript can't touch the viewer page, your cookies, or the API.
 
 ## Why the server owner cannot decrypt your data
 
 This is the claim that matters, so here is the argument piece by piece. Each part is checkable in this repo or in public standards:
 
-1. **Encryption happens before upload.** The CLI encrypts locally and the HTTP request body contains only `IV ‖ ciphertext`. Grep [`cli/tinker-share.ts`](../cli/tinker-share.ts): the only thing `fetch` ever sends is the encrypted blob. The key variable is never serialized into any request.
+1. **Encryption happens before upload.** The CLI encrypts locally and the HTTP request body contains only `IV ‖ ciphertext`. Grep [`cli/tinker-share.ts`](cli/tinker-share.ts): the only thing `fetch` ever sends is the encrypted blob. The key variable is never serialized into any request.
 2. **The key lives only in the fragment, and fragments never leave the client.** [RFC 3986 §3.5](https://www.rfc-editor.org/rfc/rfc3986#section-3.5) and the [WHATWG URL/Fetch standards](https://fetch.spec.whatwg.org/) define the fragment as client-side: browsers remove it from the request line of every HTTP request and from the `Referer` header. It doesn't appear in server access logs, CDN logs, or TLS traffic; it is never transmitted at all. (The viewer additionally sets `Referrer-Policy: no-referrer` and `noindex`, as belt-and-suspenders.)
-3. **The server code has no decryption path.** The request logic is one small file, [`server/core.ts`](../server/core.ts), while the entries [`server/cf.ts`](../server/cf.ts) and [`server/server.ts`](../server/server.ts) just wire it to storage. Read all of it. It stores bytes, returns bytes, and serves a static page. It imports no crypto beyond hashing a delete token, receives no key, and has nowhere to get one.
+3. **The server code has no decryption path.** The request logic is one small file, [`server/core.ts`](server/core.ts), while the entries [`server/cf.ts`](server/cf.ts) and [`server/server.ts`](server/server.ts) just wire it to storage. Read all of it. It stores bytes, returns bytes, and serves a static page. It imports no crypto beyond hashing a delete token, receives no key, and has nowhere to get one.
 4. **The key space is not guessable.** 256-bit random keys from a CSPRNG; brute force is not a conversation.
 5. **Verify it yourself, live.** Push an artifact, then fetch what the server has:
 
@@ -81,7 +81,7 @@ This is the claim that matters, so here is the argument piece by piece. Each par
 
    You'll see uniform random bytes: no HTML tags, no words, no structure. That *is* the entirety of what the server operator, Cloudflare, or anyone who steals the store possesses. You can also open DevTools → Network on the viewer page and confirm the request for the page and the ciphertext contain no fragment.
 
-This is the same construction wormhole.app describes for its "the key never reaches us" property, and the same `#fragment`-secret pattern used by Excalidraw share links and the late Firefox Send: client-side keys riding in the one part of a URL the network never sees.
+This is the same `#fragment`-secret pattern used by Excalidraw share links and the late Firefox Send: client-side keys riding in the one part of a URL the network never sees.
 
 ## Threat model
 
@@ -92,7 +92,7 @@ What this protects against, and what it doesn't:
 | Server operator reading content | **Anyone you give the full link to.** The link *is* the key |
 | Cloudflare / storage compromise reading content | Recipients re-sharing the link before it expires |
 | Ciphertext tampering (GCM auth fails closed) | Metadata: the server sees blob sizes, upload times, requester IPs |
-| Search engines / link scanners (noindex, key not in any request) | A **malicious server operator** shipping a tampered viewer page that steals keys from visitors' fragments. This is inherent to all in-browser crypto (wormhole.app included); here you *are* the operator, so you're trusting yourself and your host's integrity |
+| Search engines / link scanners (noindex, key not in any request) | A **malicious server operator** shipping a tampered viewer page that steals keys from visitors' fragments. This is inherent to all in-browser crypto; here you *are* the operator, so you're trusting yourself and your host's integrity |
 | Forgotten cleanup (storage-level TTL expiry) | Links sitting in chat logs/browser history. The fragment is stored by *clients* (history, bookmarks), just never sent over the network |
 | Early deletion by anyone holding the deletion link | Losing the deletion link. There is no other way to delete early (wait for TTL) |
 
@@ -173,7 +173,7 @@ The server speaks plain HTTP; put a TLS-terminating reverse proxy (Caddy, nginx,
 
 ## Configuration reference
 
-Server configuration is entirely environment variables (self-host reads `.env` / the process env; Cloudflare reads `wrangler.toml` `[vars]` and secrets). See [`.env.example`](../.env.example).
+Server configuration is entirely environment variables (self-host reads `.env` / the process env; Cloudflare reads `wrangler.toml` `[vars]` and secrets). See [`.env.example`](.env.example).
 
 | Variable | Where | Default | Meaning |
 |---|---|---|---|
@@ -232,7 +232,7 @@ server/server.ts         self-host entry: Bun.serve + config/storage selection +
 server/storage/sqlite.ts bun:sqlite adapter (lazy expiry + sweep)
 server/storage/redis.ts  Bun.RedisClient adapter (native EX TTL)
 server/viewer.html       decrypt-and-render viewer page (+ delete.html, landing.html)
-skill/SKILL.md           agent instructions
+skills/share-artifact/SKILL.md           agent instructions
 ```
 
 The `Storage` interface is three methods (`put` / `get` / `delete`), so adding a backend is a small, self-contained adapter. `server/core.ts` never knows which one it's talking to.

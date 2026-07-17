@@ -1,6 +1,6 @@
 ---
 name: share-artifact
-description: Use when the user asks to share, publish, or send an HTML/Markdown artifact, report, dashboard, or page as a link — encrypts it end-to-end and returns a shareable view URL plus a private early-deletion URL (wormhole-style; the server never sees plaintext). Also use to delete a previously shared artifact early.
+description: Use when the user asks to share, publish, or send an HTML/Markdown artifact, report, dashboard, or page as a link — encrypts it end-to-end and returns a shareable view URL plus a private early-deletion URL (the server never sees plaintext). Also use to delete a previously shared artifact early.
 ---
 
 # Share Artifact

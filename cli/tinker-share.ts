@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // tinker-share — encrypt a self-contained HTML/Markdown artifact, upload it,
-// print a wormhole-style share link (key only in the URL fragment).
+// print a share link (key only in the URL fragment).
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { hostname } from "node:os";
 import "../shared/sig.js";

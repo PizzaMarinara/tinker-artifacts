@@ -1,6 +1,6 @@
 # Tinker
 
-**End-to-end-encrypted, self-expiring share links for HTML & Markdown artifacts. Self-hosted, wormhole-style.**
+**End-to-end-encrypted, self-expiring share links for HTML & Markdown artifacts. Self-hosted.**
 
 ![license](https://img.shields.io/badge/license-MIT-blue) ![runtime](https://img.shields.io/badge/runtime-Bun-black) ![deploy](https://img.shields.io/badge/deploy-Cloudflare%20%7C%20self--host-orange) ![deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen)
 
@@ -15,10 +15,10 @@ Tinker is built for the artifacts coding agents now produce all the time (self-c
 
 ## Features
 
-- 🔒 **True end-to-end encryption.** AES-256-GCM in the browser/CLI via WebCrypto; the server stores only ciphertext it cannot read. You can [prove it](docs/GUIDE.md#why-the-server-owner-cannot-decrypt-your-data), not just take it on trust.
+- 🔒 **True end-to-end encryption.** AES-256-GCM in the browser/CLI via WebCrypto; the server stores only ciphertext it cannot read. You can [prove it](GUIDE.md#why-the-server-owner-cannot-decrypt-your-data), not just take it on trust.
 - ⏳ **Temporary by default.** Every artifact has a TTL (1h/1d/7d/30d, configurable), and storage expires it on its own: no cleanup jobs.
 - 🗑️ **Early deletion.** Every upload also returns a private, one-time deletion link.
-- 🤖 **Agent-native.** A single zero-dependency CLI plus a [skill](skill/SKILL.md) any coding harness (Claude Code, Codex, and the like) can drive.
+- 🤖 **Agent-native.** A single zero-dependency CLI plus a [skill](skills/share-artifact/SKILL.md) any coding harness (Claude Code, Codex, and the like) can drive.
 - 🚀 **Runs anywhere.** A Cloudflare Worker (serverless, free tier) or a self-hosted Bun server on any VPS, homelab, or spare box. SQLite by default, optional Redis.
 - 🔑 **Signed uploads.** Ed25519 request signatures ([RFC 9421](https://datatracker.ietf.org/doc/rfc9421/)); the server holds only public keys.
 - 🪶 **Boring to operate.** No build pipeline, no runtime dependencies, no external services in the default setups.
@@ -48,7 +48,7 @@ bun cli/tinker-share.ts keygen <your-name>    # prints "<your-name>:<pubkey>", p
 bun run start                                 # serves on :8080
 ```
 
-For Docker, Redis, TLS behind a reverse proxy, and adding more uploaders, see the [deployment guide](docs/GUIDE.md#deployment).
+For Docker, Redis, TLS behind a reverse proxy, and adding more uploaders, see the [deployment guide](GUIDE.md#deployment).
 
 ### Share something
 
@@ -87,17 +87,17 @@ Only self-contained `.html`/`.md` files, up to 20 MB. Inline your assets, becaus
 
 The key rides in the URL **fragment** (`#…`), which [per web standards](https://www.rfc-editor.org/rfc/rfc3986#section-3.5) browsers keep client-side and never put in a request. It never reaches server logs, the CDN, or TLS traffic. The server only ever holds an opaque encrypted blob.
 
-For the full story, the [documentation](docs/GUIDE.md) explains the encryption [in plain terms](docs/GUIDE.md#the-encryption-in-plain-terms) and [precisely](docs/GUIDE.md#the-encryption-precisely), walks through [why the operator can't decrypt](docs/GUIDE.md#why-the-server-owner-cannot-decrypt-your-data) with a step you can verify yourself, and lays out an [honest threat model](docs/GUIDE.md#threat-model).
+For the full story, the [documentation](GUIDE.md) explains the encryption [in plain terms](GUIDE.md#the-encryption-in-plain-terms) and [precisely](GUIDE.md#the-encryption-precisely), walks through [why the operator can't decrypt](GUIDE.md#why-the-server-owner-cannot-decrypt-your-data) with a step you can verify yourself, and lays out an [honest threat model](GUIDE.md#threat-model).
 
 ## For AI agents
 
-Point your harness at [`skill/SKILL.md`](skill/SKILL.md). It teaches the agent to `keygen` once, `push` artifacts, present both links correctly (treating the deletion link as a show-once secret), and `delete` on request. It works as a Claude Code skill or as plain AGENTS.md-style instructions.
+Point your harness at [`skills/share-artifact/SKILL.md`](skills/share-artifact/SKILL.md). It teaches the agent to `keygen` once, `push` artifacts, present both links correctly (treating the deletion link as a show-once secret), and `delete` on request. It works as a Claude Code skill or as plain AGENTS.md-style instructions.
 
 ## Documentation
 
-- **[Full guide](docs/GUIDE.md)** covers encryption internals, the threat model, the deployment reference, the CLI reference, configuration, and architecture.
-- **[Agent skill](skill/SKILL.md)** is how coding agents use it.
-- **[Contributing & development](docs/GUIDE.md#development)** covers tests, the page-generation step, and project layout.
+- **[Full guide](GUIDE.md)** covers encryption internals, the threat model, the deployment reference, the CLI reference, configuration, and architecture.
+- **[Agent skill](skills/share-artifact/SKILL.md)** is how coding agents use it.
+- **[Contributing & development](GUIDE.md#development)** covers tests, the page-generation step, and project layout.
 
 ## License
 
