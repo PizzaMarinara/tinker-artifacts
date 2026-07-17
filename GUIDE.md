@@ -95,6 +95,7 @@ What this protects against, and what it doesn't:
 | Search engines / link scanners (noindex, key not in any request) | A **malicious server operator** shipping a tampered viewer page that steals keys from visitors' fragments. This is inherent to all in-browser crypto; here you *are* the operator, so you're trusting yourself and your host's integrity |
 | Forgotten cleanup (storage-level TTL expiry) | Links sitting in chat logs/browser history. The fragment is stored by *clients* (history, bookmarks), just never sent over the network |
 | Early deletion by anyone holding the deletion link | Losing the deletion link. There is no other way to delete early (wait for TTL) |
+| Artifacts *silently* exfiltrating data (the viewer CSP blocks all automatic requests: subresources, scripted `fetch`, image/beacon loads) | A link **the reader clicks** inside a malicious artifact — user-initiated navigation opens externally and its URL can encode data. Treat links in artifacts from strangers like links in email |
 
 Pick TTLs accordingly: short for sensitive things.
 
@@ -214,7 +215,7 @@ Deletes an artifact early, given its deletion link. No browser needed. Without t
 
 ## Limits
 
-- Self-contained `.html` / `.md` only. Inline your CSS/JS/images (data: URIs) — the viewer's CSP blocks external requests, which is a feature: artifacts can't phone home.
+- Self-contained `.html` / `.md` only. Inline your CSS/JS/images (data: URIs) — the viewer's CSP blocks every request an artifact makes on its own (subresources, scripted `fetch`, images, media), so artifacts can't silently phone home. Deliberate exception: links the **reader clicks** open normally in a new tab, so ordinary hyperlinks in shared reports keep working (see the threat model).
 - Max **20 MB** per artifact (server-enforced; also under Cloudflare KV's value cap).
 - Markdown renders via a small built-in renderer (headings, lists, tables, code blocks, links); HTML renders as-is inside the sandboxed iframe.
 - Anyone with the full view link can read the artifact until it expires or is deleted.
