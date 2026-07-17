@@ -7,7 +7,7 @@ Thanks for helping out. Tinker is deliberately small; the best contributions kee
 - **Zero runtime dependencies is a hard rule.** The only devDependency is `wrangler`. Don't add packages for what a few lines (or the platform) can do.
 - **Small, focused changes.** One concern per PR; no drive-by refactors.
 - **Don't expand product scope**: no accounts, dashboards, analytics, permanent publishing, or arbitrary-file support.
-- **Never edit generated `server/*-html.ts` files by hand** — see the page workflow below.
+- **Never edit generated `server/*-html.ts` files by hand**; see the page workflow below.
 
 ## Setup
 
@@ -49,4 +49,4 @@ The HTML pages (`server/viewer.html`, `server/delete.html`, `server/landing.html
 bun run gen
 ```
 
-After editing any page source, run it and **commit the regenerated `server/*-html.ts` files** — a drift test fails otherwise. Never edit the generated files directly.
+After editing any page source, run it and **commit the regenerated `server/*-html.ts` files**; a drift test fails otherwise. Never edit the generated files directly.

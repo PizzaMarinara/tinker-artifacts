@@ -49,21 +49,21 @@ Imagine mailing someone a locked box through a storage depot:
 3. You send your friend one message: the depot's address, the claim ticket, **and the key**. The key part of that message is written in a special ink the depot physically cannot see when your friend shows up with the ticket.
 4. Your friend collects the locked box, walks outside, and opens it with the key. The depot saw a locked box arrive and a locked box leave. That's all it ever had.
 
-The "special ink" is not a metaphorical hand-wave — it's how URLs actually work. The fragment (`#...`) is defined by the web's own standards as **client-side only**: browsers use it locally and strip it from every network request. The server can't log what it never receives.
+The "special ink" is not a metaphorical hand-wave: it's how URLs actually work. The fragment (`#...`) is defined by the web's own standards as **client-side only**: browsers use it locally and strip it from every network request. The server can't log what it never receives.
 
 ## The encryption, precisely
 
-All cryptography uses the [WebCrypto API](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto) — the same audited primitives built into every modern browser and runtime. No crypto libraries, no hand-rolled algorithms.
+All cryptography uses the [WebCrypto API](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto), the same audited primitives built into every modern browser and runtime. No crypto libraries, no hand-rolled algorithms.
 
 Per artifact, the CLI ([`cli/tinker-share.ts`](cli/tinker-share.ts)):
 
 1. Builds a plaintext envelope `{"type": "html"|"md", "name": ..., "content": ...}`, so even the **filename and file type** are encrypted.
 2. Generates a fresh random **256-bit key** and **96-bit IV** from the OS CSPRNG (`crypto.getRandomValues`). Keys are never reused across artifacts.
 3. Encrypts with **AES-256-GCM**. GCM is *authenticated* encryption: the ciphertext carries an integrity tag, so a blob that was tampered with (or a wrong key) doesn't decrypt into garbage; decryption *fails*, loudly. A test flips one ciphertext bit and asserts exactly that ([`tests/crypto.test.ts`](tests/crypto.test.ts)).
-4. Uploads `IV ‖ ciphertext` as an opaque byte blob. The server generates a random 128-bit id for it — the id is unrelated to the key, so knowing the id (which the server does) tells you nothing about the key (which it doesn't).
+4. Uploads `IV ‖ ciphertext` as an opaque byte blob. The server generates a random 128-bit id for it. The id is unrelated to the key, so knowing the id (which the server does) tells you nothing about the key (which it doesn't).
 5. Prints `https://<host>/a/<id>#<key>` with the key base64url-encoded in the fragment.
 
-The viewer page ([`server/viewer.html`](server/viewer.html)) mirrors this in reverse: it reads the key from `location.hash`, fetches the ciphertext, decrypts with WebCrypto in the browser, and renders the result inside an `<iframe sandbox>` with no same-origin access — so even the artifact's own JavaScript can't touch the viewer page, your cookies, or the API.
+The viewer page ([`server/viewer.html`](server/viewer.html)) mirrors this in reverse: it reads the key from `location.hash`, fetches the ciphertext, decrypts with WebCrypto in the browser, and renders the result inside an `<iframe sandbox>` with no same-origin access, so even the artifact's own JavaScript can't touch the viewer page, your cookies, or the API.
 
 ## Why the server owner cannot decrypt your data
 
@@ -95,7 +95,7 @@ What this protects against, and what it doesn't:
 | Search engines / link scanners (noindex, key not in any request) | A **malicious server operator** shipping a tampered viewer page that steals keys from visitors' fragments. This is inherent to all in-browser crypto; here you *are* the operator, so you're trusting yourself and your host's integrity |
 | Forgotten cleanup (storage-level TTL expiry) | Links sitting in chat logs/browser history. The fragment is stored by *clients* (history, bookmarks), just never sent over the network |
 | Early deletion by anyone holding the deletion link | Losing the deletion link. There is no other way to delete early (wait for TTL) |
-| Artifacts *silently* exfiltrating data (the viewer CSP blocks all automatic requests: subresources, scripted `fetch`, image/beacon loads) | A link **the reader clicks** inside a malicious artifact — user-initiated navigation opens externally and its URL can encode data. Treat links in artifacts from strangers like links in email |
+| Artifacts *silently* exfiltrating data (the viewer CSP blocks all automatic requests: subresources, scripted `fetch`, image/beacon loads) | A link **the reader clicks** inside a malicious artifact: user-initiated navigation opens externally and its URL can encode data. Treat links in artifacts from strangers like links in email |
 
 Pick TTLs accordingly: short for sensitive things.
 
@@ -122,10 +122,10 @@ Two supported targets. Both run the identical request core; they differ only in 
 
 ### Cloudflare Workers
 
-Serverless, zero maintenance, free tier is plenty. Storage is Workers KV with native TTL expiry — nothing to clean up.
+Serverless, zero maintenance, free tier is plenty. Storage is Workers KV with native TTL expiry, so there is nothing to clean up.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/PizzaMarinara/tinker-artifacts)
-*(the button works once this repo is public; you still run the `keygen` + `UPLOAD_KEYS` steps below)*
+*(you still run the `keygen` + `UPLOAD_KEYS` steps below)*
 
 ```sh
 bun install
@@ -145,7 +145,7 @@ DEFAULT_TTL = "7d"             # must be one of TTL_OPTIONS
 
 ### Self-hosted (VPS, homelab, company box)
 
-Runs anywhere Bun or Docker runs. Default storage is a single SQLite file — no external services.
+Runs anywhere Bun or Docker runs. Default storage is a single SQLite file, with no external services.
 
 ```sh
 bun install
@@ -163,13 +163,13 @@ docker run -d -p 8080:8080 -v tinker-data:/data \
   tinker-artifacts
 ```
 
-The server speaks plain HTTP; put a TLS-terminating reverse proxy (Caddy, nginx, Traefik) in front for HTTPS, and set the CLI's `TINKER_SHARE_URL` to that public URL. **TLS matters:** the fragment key never leaves the browser, but the ciphertext, ids, and signed uploads still travel over the wire — HTTPS protects those in transit.
+The server speaks plain HTTP; put a TLS-terminating reverse proxy (Caddy, nginx, Traefik) in front for HTTPS, and set the CLI's `TINKER_SHARE_URL` to that public URL. **TLS matters:** the fragment key never leaves the browser, but the ciphertext, ids, and signed uploads still travel over the wire; HTTPS protects those in transit.
 
 #### Storage backends (`STORAGE`)
 
 | `STORAGE` | Needs | TTL cleanup | Use when |
 |---|---|---|---|
-| `sqlite` (default) | just a file (`SQLITE_PATH`) | in-process sweep every 60 s + lazy-on-read | single instance — homelab, one VPS |
+| `sqlite` (default) | just a file (`SQLITE_PATH`) | in-process sweep every 60 s + lazy-on-read | single instance: homelab, one VPS |
 | `redis` | a Redis/Valkey server (`REDIS_URL`) | native key expiry | multiple instances behind a load balancer, or you already run Redis |
 
 ## Configuration reference
@@ -214,7 +214,7 @@ Generates this machine's Ed25519 keypair, writes the private key to `~/.config/t
 Encrypts a self-contained `.html`/`.htm`/`.md`/`.markdown` file and uploads it. `--ttl` must be one of the deployment's `TTL_OPTIONS` (default `DEFAULT_TTL`); an invalid value returns a `400` listing the allowed ones. Prints:
 
 - the **view link** `…/a/<id>#<key>` (also copied to the clipboard on macOS via `pbcopy`), and
-- the **deletion link** `…/d/<id>#<token>`, shown only once — keep it private.
+- the **deletion link** `…/d/<id>#<token>`, shown only once; keep it private.
 
 ### `delete <deletion-url>`
 
@@ -222,8 +222,8 @@ Deletes an artifact early, given its deletion link. No browser needed. Without t
 
 ## Limits
 
-- Self-contained `.html` / `.md` only. Inline your CSS/JS/images (data: URIs) — the viewer's CSP blocks every request an artifact makes on its own (subresources, scripted `fetch`, images, media), so artifacts can't silently phone home. Deliberate exception: links the **reader clicks** open normally in a new tab, so ordinary hyperlinks in shared reports keep working (see the threat model).
-- Max **20 MiB** per *encrypted* artifact, server-enforced at the exact byte boundary (`MAX_BYTES` in [`server/core.ts`](server/core.ts); kept under Cloudflare KV's 25 MiB value cap). The encrypted upload is your source file plus JSON-escaping overhead — measured at ~8% for newline-heavy HTML — so plan on source files up to ~18 MB. Oversized uploads get an HTTP 413.
+- Self-contained `.html` / `.md` only. Inline your CSS/JS/images (data: URIs). The viewer's CSP blocks every request an artifact makes on its own (subresources, scripted `fetch`, images, media), so artifacts can't silently phone home. The one deliberate exception: links the **reader clicks** open normally in a new tab, so ordinary hyperlinks in shared reports keep working (see the threat model).
+- Max **20 MiB** per *encrypted* artifact, server-enforced at the exact byte boundary (`MAX_BYTES` in [`server/core.ts`](server/core.ts); kept under Cloudflare KV's 25 MiB value cap). The encrypted upload is your source file plus JSON-escaping overhead (measured at ~8% for newline-heavy HTML), so plan on source files up to ~18 MB. Oversized uploads get an HTTP 413.
 - Markdown renders via a small built-in renderer (headings, lists, tables, code blocks, links); HTML renders as-is inside the sandboxed iframe.
 - Anyone with the full view link can read the artifact until it expires or is deleted.
 

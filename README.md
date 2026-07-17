@@ -77,10 +77,10 @@ tinker-share delete "https://…/d/<id>#<token>"   # delete early
 
 **Know the limits before you rely on it:**
 
-- Self-contained `.html`/`.md` files only — inline your assets. The viewer's CSP blocks every request an artifact makes on its own (scripts, fetches, images), so it can't silently phone home; links the reader deliberately clicks open normally in a new tab.
-- Size cap is **20 MiB after encryption** — encryption adds roughly 5–10% to typical HTML/Markdown, so source files up to ~18 MB are safely inside it.
+- Self-contained `.html`/`.md` files only, so inline your assets. The viewer's CSP blocks every request an artifact makes on its own (scripts, fetches, images), which means it can't silently phone home. Links the reader deliberately clicks open normally in a new tab.
+- Size cap is **20 MiB after encryption**. Encryption adds roughly 5–10% to typical HTML/Markdown, so source files up to ~18 MB are safely inside it.
 - **The link is the key.** Anyone who obtains the full URL can read the artifact until it expires; recipients can re-share it.
-- The server can't read content, but it sees **metadata**: sizes, timestamps, IPs, uploader names. And since browsers run whatever viewer page the server ships, a compromised server could serve key-stealing JavaScript — inherent to all in-browser crypto, and why you host it yourself. Details in the [threat model](GUIDE.md#threat-model).
+- The server can't read content, but it sees **metadata**: sizes, timestamps, IPs, uploader names. And since browsers run whatever viewer page the server ships, a compromised server could serve key-stealing JavaScript. That risk is inherent to all in-browser crypto, and it's why you host it yourself. Details in the [threat model](GUIDE.md#threat-model).
 
 ## How it works
 
@@ -116,7 +116,7 @@ Plenty of tools share files or pastes; none quite covers "hand someone a rendere
 | Object storage + presigned URL | ⚠️ if content-type set | ❌ | ⚠️ URL expires, object stays | ⚠️ cloud account | ✅ | ❌ |
 | GitHub secret Gist | ⚠️ MD only, no HTML | ❌ | ❌ | ❌ | ✅ | ⚠️ via `gh` |
 
-All of these are fine tools — Tinker just occupies the specific corner where a coding agent produces an HTML report and you want it viewable as a link, encrypted end-to-end, gone in a week, on infrastructure you run.
+All of these are fine tools. Tinker just occupies the specific corner where a coding agent produces an HTML report and you want it viewable as a link, encrypted end-to-end, gone in a week, on infrastructure you run.
 
 ## For AI agents
 
