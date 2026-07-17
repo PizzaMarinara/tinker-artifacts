@@ -32,8 +32,7 @@ Design goals:
     (AES-256-GCM)         │
  3. upload CIPHERTEXT ────┼───────────▶  store blob in KV with TTL
                           │              return random id
- 4. build the link        │
-    /a/<id> # <key> ◀─────┘
+ 4. build the links: view /a/<id>#<key> · delete /d/<id>#<token> ◀─────┘
           │
           └── send link ────────────────────────────────────────────────▶ 5. fetch /a/<id>  (viewer page)
                                          serve static viewer ──────────▶ 6. fetch ciphertext by id
@@ -75,7 +74,7 @@ This is the claim that matters, so here is the argument piece by piece — each 
 
 1. **Encryption happens before upload.** The CLI encrypts locally and the HTTP request body contains only `IV ‖ ciphertext` — grep [`cli/tinker-share.ts`](cli/tinker-share.ts): the only thing `fetch` ever sends is the encrypted blob. The key variable is never serialized into any request.
 2. **The key lives only in the fragment, and fragments never leave the client.** [RFC 3986 §3.5](https://www.rfc-editor.org/rfc/rfc3986#section-3.5) and the [WHATWG URL/Fetch standards](https://fetch.spec.whatwg.org/) define the fragment as client-side: browsers remove it from the request line of every HTTP request and from the `Referer` header. It doesn't appear in server access logs, CDN logs, or TLS traffic — it is never transmitted at all. (The viewer additionally sets `Referrer-Policy: no-referrer` and `noindex`, as belt-and-suspenders.)
-3. **The server code has no decryption path.** [`server/worker.ts`](server/worker.ts) is ~70 lines; read all of it. It stores bytes, returns bytes, and serves a static page. It imports no crypto, receives no key, and has nowhere to get one.
+3. **The server code has no decryption path.** [`server/worker.ts`](server/worker.ts) is one file; read all of it. It stores bytes, returns bytes, and serves a static page. It imports no crypto, receives no key, and has nowhere to get one.
 4. **The key space is not guessable.** 256-bit random keys from a CSPRNG; brute force is not a conversation.
 5. **Verify it yourself, live.** Push an artifact, then fetch what the server has:
 
@@ -98,57 +97,85 @@ What this protects against, and what it doesn't:
 | Ciphertext tampering (GCM auth fails closed) | Metadata: the server sees blob sizes, upload times, requester IPs |
 | Search engines / link scanners (noindex, key not in any request) | A **malicious server operator** shipping a tampered viewer page that steals keys from visitors' fragments — inherent to all in-browser crypto (wormhole.app included). Here you *are* the operator, so you're trusting yourself and your Cloudflare account's integrity |
 | Forgotten cleanup (storage-level TTL expiry) | Links sitting in chat logs/browser history — the fragment is stored by *clients* (history, bookmarks), just never sent over the network |
+| Early deletion by anyone holding the deletion link | Losing the deletion link — there is no other way to delete early (wait for TTL) |
 
 Pick TTLs accordingly: short for sensitive things.
 
+## Who does what
+
+- **Uploaders** (you, your agents) push artifacts via the CLI or the [agent skill](skill/SKILL.md). Uploads are authenticated with **Ed25519 request signatures** ([RFC 9421](https://datatracker.ietf.org/doc/rfc9421/) profile): your machine holds a private key, the server holds only public keys. Nothing usable ever transits or sits in server config.
+- **Viewers** just open a link. No account, no key, no install.
+
+Every push returns two links:
+
+- **View link** `…/a/<id>#<key>` — share it; the part after `#` decrypts in the recipient's browser.
+- **Deletion link** `…/d/<id>#<token>` — KEEP PRIVATE. Opening it deletes the artifact immediately, before its scheduled expiry. It is shown once at upload; anyone holding it can delete (and that's the only way to delete early). Like the view key, the token travels in the URL fragment and never reaches server logs; the server stores only its SHA-256 hash.
+
 ## Deploy (once)
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/PizzaMarinara/tinker-artifacts)
+*(button works once this repo is public; it still needs the `keygen` + `UPLOAD_KEYS` steps below)*
 
 Requires [bun](https://bun.sh) and a Cloudflare account (free tier is fine).
 
 ```sh
 bun install
 bunx wrangler kv namespace create ARTIFACTS   # paste the id into wrangler.toml
-bunx wrangler secret put AUTH_TOKEN           # pick a long random token
+bun cli/tinker-share.ts keygen <your-name>    # prints "<your-name>:<pubkey>"
+bunx wrangler secret put UPLOAD_KEYS          # paste that line (comma-separate to add more people later)
 bun run deploy
 ```
 
-`AUTH_TOKEN` gates uploads only (so strangers can't use your storage); downloads need nothing but the unguessable link. The Worker fails closed if the secret is missing.
+To register another person/machine: they run `keygen`, send you the printed line, you append it (comma-separated) and re-run `wrangler secret put UPLOAD_KEYS`. Revoke by removing their line.
 
 ## Configure the CLI
 
-Env vars, or the same `KEY=VALUE` lines in `~/.config/tinker-share/config`:
+`keygen` already stored your key in `~/.config/tinker-share/config`. Add the server URL (env var or a `TINKER_SHARE_URL=…` line in that same file):
 
 ```sh
 export TINKER_SHARE_URL=https://tinker-artifacts.<you>.workers.dev
-export TINKER_SHARE_TOKEN=<the token>
 ```
 
-Optional: make it a command — `alias tinker-share="bun /path/to/tinker-artifacts/cli/tinker-share.ts"`
+Optional: `alias tinker-share="bun /path/to/tinker-artifacts/cli/tinker-share.ts"`
 
 ## Use
 
 ```sh
-tinker-share push report.html            # default TTL 7d
-tinker-share push notes.md --ttl 1h      # 1h | 1d | 7d | 30d
+tinker-share push report.html            # deployment default TTL (7d out of the box)
+tinker-share push notes.md --ttl 1h      # any TTL your deployment allows
+tinker-share delete "https://…/d/<id>#<token>"   # early deletion, no browser needed
 ```
 
-Prints (and copies) `https://…/a/<id>#<key>`. Share the **full** link — without the part after `#`, the artifact is undecryptable, by anyone, forever. Artifacts auto-delete at TTL via KV `expirationTtl`; there are no cleanup jobs.
+`push` prints the view link (also copied to your clipboard) and the deletion link — the deletion link is shown only this once.
 
-For coding agents, point them at [`skill/SKILL.md`](skill/SKILL.md) — it works as a Claude Code skill or as plain AGENTS.md-style instructions in any harness.
+## Retention
+
+Artifacts self-delete at their TTL via KV `expirationTtl` — no cleanup jobs. Instance operators configure the menu in `wrangler.toml`:
+
+```toml
+[vars]
+TTL_OPTIONS = "1h,1d,7d,30d"   # any comma-separated <n>m|h|d list, 60s–365d each
+DEFAULT_TTL = "7d"             # must be one of TTL_OPTIONS
+```
+
+## Security model (upload side)
+
+Each `PUT` carries RFC 9421 `Signature-Input`/`Signature` headers over `@method`, `@path`, `@query`, and `content-digest`, signed with Ed25519 and bound to a timestamp (±300 s accepted). The server verifies against `UPLOAD_KEYS` and rejects everything else with a generic 401. Residual risk, accepted for zero-database simplicity: a captured request can be replayed within its 300 s window, which can only duplicate an upload.
 
 ## Limits
 
-- Self-contained `.html` / `.md` only. Inline your CSS/JS/images (data: URIs) — the viewer's CSP blocks all external requests, which is a feature: an artifact can't phone home.
-- Max 20 MB per artifact (under the KV 25 MB value cap).
-- Markdown gets a minimal built-in renderer (headings, lists, tables, code blocks, links); HTML renders as-is inside the sandbox.
+- Self-contained `.html` / `.md` only (inline your assets; the viewer's CSP blocks external requests — a feature: artifacts can't phone home).
+- Max 20 MB per artifact (KV value cap).
+- Anyone with the full view link can read the artifact until it expires or is deleted.
 
 ## Develop
 
 ```sh
-echo 'AUTH_TOKEN=dev-token' > .dev.vars
-bun run dev                                # wrangler dev on :8787
-bun test                                   # unit tests
-TINKER_SHARE_URL=http://localhost:8787 TINKER_SHARE_TOKEN=dev-token bun run smoke
+cp .dev.vars.example .dev.vars
+bun cli/tinker-share.ts keygen dev        # paste printed line into .dev.vars
+bun run dev                               # wrangler dev on :8787
+bun test                                  # unit tests
+TINKER_SHARE_URL=http://localhost:8787 bun run smoke   # full lifecycle vs the dev server
 ```
 
-Layout: `server/worker.ts` (3 routes), `server/viewer.html` + `server/viewer-md.js` (viewer sources), `cli/tinker-share.ts` (CLI + crypto), `skill/SKILL.md`. The viewer page is inlined into the Worker by `bun run gen` → `server/viewer-html.ts` (generated, committed, drift-tested — never edit by hand; dev/deploy/test regenerate it automatically).
+Pages (`server/viewer.html`, `server/delete.html`, `server/landing.html`, `server/viewer-md.js`) are inlined into the Worker by `bun run gen` → `server/*-html.ts` (generated, committed, drift-tested — never edit those by hand; dev/deploy/test flows regenerate them).

@@ -1,0 +1,8 @@
+# Copy this file to .dev.vars (gitignored) for local `bun run dev`.
+# Create a dev key, then paste the line it prints as the value here:
+#   bun cli/tinker-share.ts keygen dev
+UPLOAD_KEYS=dev:REPLACE_WITH_PUBKEY_FROM_KEYGEN
+
+# Retention overrides (optional — defaults shown):
+# TTL_OPTIONS=1h,1d,7d,30d
+# DEFAULT_TTL=7d
