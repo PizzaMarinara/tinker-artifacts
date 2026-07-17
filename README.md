@@ -16,7 +16,7 @@ Tinker is built for the artifacts coding agents now produce all the time (self-c
 ## Features
 
 - 🔒 **True end-to-end encryption.** AES-256-GCM in the browser/CLI via WebCrypto; the server stores only ciphertext it cannot read. You can [prove it](docs/GUIDE.md#why-the-server-owner-cannot-decrypt-your-data), not just take it on trust.
-- ⏳ **Temporary by default.** Every artifact has a TTL (1h/1d/7d/30d, configurable), and storage expires it on its own — no cleanup jobs.
+- ⏳ **Temporary by default.** Every artifact has a TTL (1h/1d/7d/30d, configurable), and storage expires it on its own: no cleanup jobs.
 - 🗑️ **Early deletion.** Every upload also returns a private, one-time deletion link.
 - 🤖 **Agent-native.** A single zero-dependency CLI plus a [skill](skill/SKILL.md) any coding harness (Claude Code, Codex, and the like) can drive.
 - 🚀 **Runs anywhere.** A Cloudflare Worker (serverless, free tier) or a self-hosted Bun server on any VPS, homelab, or spare box. SQLite by default, optional Redis.
@@ -44,7 +44,7 @@ bun run deploy
 ```sh
 bun install
 cp .env.example .env
-bun cli/tinker-share.ts keygen <your-name>    # prints "<your-name>:<pubkey>" — put it in .env as UPLOAD_KEYS
+bun cli/tinker-share.ts keygen <your-name>    # prints "<your-name>:<pubkey>", put it in .env as UPLOAD_KEYS
 bun run start                                 # serves on :8080
 ```
 
