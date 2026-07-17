@@ -13,6 +13,8 @@ Send that link to anyone. Their browser decrypts and renders the artifact. After
 
 Tinker is built for the artifacts coding agents now produce all the time (self-contained HTML reports, dashboards, Markdown write-ups) when you want to share one as a link without handing it to a service you don't control.
 
+![A shared Markdown artifact, decrypted and rendered in the recipient's browser by the Tinker viewer](docs/viewer.png)
+
 ## Features
 
 - 🔒 **True end-to-end encryption.** AES-256-GCM in the browser/CLI via WebCrypto; the server stores only ciphertext it cannot read. You can [prove it](GUIDE.md#why-the-server-owner-cannot-decrypt-your-data), not just take it on trust.
