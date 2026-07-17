@@ -1,4 +1,6 @@
 import viewerHtml from "./viewer-html";
+import deleteHtml from "./delete-html";
+import landingHtml from "./landing-html";
 import "../shared/sig.js";
 
 const tsig = (globalThis as any).tinkerSig;
@@ -109,6 +111,21 @@ async function verifySignedPut(request: Request, bodyBytes: Uint8Array, url: URL
   }
 }
 
+function page(html: string): Response {
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Content-Security-Policy":
+        "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; " +
+        "img-src data: blob:; font-src data:; media-src data: blob:; " +
+        "connect-src 'self'; frame-src 'self' data: blob: about:",
+      "Referrer-Policy": "no-referrer",
+      "X-Robots-Tag": "noindex",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -164,20 +181,9 @@ export default {
       return Response.json({ deleted: true });
     }
 
-    if (request.method === "GET" && url.pathname.startsWith("/a/")) {
-      return new Response(viewerHtml, {
-        headers: {
-          "Content-Type": "text/html; charset=utf-8",
-          "Content-Security-Policy":
-            "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; " +
-            "img-src data: blob:; font-src data:; media-src data: blob:; " +
-            "connect-src 'self'; frame-src 'self' data: blob: about:",
-          "Referrer-Policy": "no-referrer",
-          "X-Robots-Tag": "noindex",
-          "X-Content-Type-Options": "nosniff",
-        },
-      });
-    }
+    if (request.method === "GET" && url.pathname.startsWith("/a/")) return page(viewerHtml);
+    if (request.method === "GET" && url.pathname.startsWith("/d/")) return page(deleteHtml);
+    if (request.method === "GET" && url.pathname === "/") return page(landingHtml);
 
     return new Response("not found", { status: 404 });
   },

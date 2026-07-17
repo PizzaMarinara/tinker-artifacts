@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "gen": "bun scripts/gen-viewer.ts",
+    "gen": "bun scripts/gen-pages.ts",
     "dev": "bun run gen && bunx wrangler dev",
     "deploy": "bun run gen && bunx wrangler deploy",
     "smoke": "bun scripts/smoke.ts"

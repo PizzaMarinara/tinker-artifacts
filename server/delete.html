@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Delete artifact</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: -apple-system, system-ui, sans-serif; background: #f5f5f7; color: #222; }
+  .card { background: #fff; border-radius: 14px; padding: 2rem 2.2rem; max-width: 26rem; box-shadow: 0 8px 30px rgba(0,0,0,.08); text-align: center; }
+  h1 { font-size: 1.2rem; margin: 0 0 .6rem; }
+  p { color: #666; font-size: .92rem; line-height: 1.5; margin: 0; }
+  button { font: inherit; margin-top: 1.2rem; padding: .55rem 1.4rem; border: 0; border-radius: 8px; background: #c0392b; color: #fff; cursor: pointer; }
+  button:hover { background: #a93226; }
+  button:disabled { opacity: .5; cursor: default; }
+  @media (prefers-color-scheme: dark) { body { background: #111; color: #eee; } .card { background: #1c1c1e; box-shadow: none; } p { color: #999; } }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Delete this artifact?</h1>
+  <p id="msg">This permanently deletes the artifact now, before its scheduled expiry. It cannot be undone.</p>
+  <button id="del" type="button">Delete now</button>
+</div>
+<script>
+(function () {
+  var btn = document.getElementById("del");
+  var msg = document.getElementById("msg");
+  var id = location.pathname.split("/").pop();
+  var token = location.hash.slice(1);
+  if (!token) {
+    btn.disabled = true;
+    msg.textContent = "This deletion link is incomplete — the part after # is required.";
+    return;
+  }
+  btn.addEventListener("click", async function () {
+    btn.disabled = true;
+    var res;
+    try {
+      res = await fetch("/api/artifacts/" + id, { method: "DELETE", headers: { "X-Delete-Token": token } });
+    } catch (e) {
+      msg.textContent = "Network error — try again.";
+      btn.disabled = false;
+      return;
+    }
+    if (res.ok) { msg.textContent = "Artifact deleted."; btn.remove(); }
+    else if (res.status === 404) { msg.textContent = "Already gone — deleted earlier or expired."; btn.remove(); }
+    else { msg.textContent = "Invalid deletion link."; btn.disabled = false; }
+  });
+})();
+</script>
+</body>
+</html>

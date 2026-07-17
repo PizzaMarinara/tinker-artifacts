@@ -7,13 +7,23 @@
 <title>tinker artifact</title>
 <style>
   html, body { margin: 0; height: 100%; }
-  body { font-family: -apple-system, system-ui, sans-serif; background: #fff; }
-  #frame { border: 0; width: 100%; height: 100%; display: none; }
-  #status { display: flex; height: 100%; align-items: center; justify-content: center; color: #555; padding: 1rem; text-align: center; }
-  @media (prefers-color-scheme: dark) { body { background: #111; } #status { color: #999; } }
+  body { font-family: -apple-system, system-ui, sans-serif; background: #fff; display: flex; flex-direction: column; }
+  #bar { display: none; align-items: center; gap: 12px; padding: 0 14px; height: 42px; border-bottom: 1px solid rgba(127,127,127,.25); font-size: 13px; color: #333; }
+  #name { font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #exp { color: #888; white-space: nowrap; }
+  #dl { font: inherit; padding: 4px 12px; border: 1px solid rgba(127,127,127,.4); border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+  #dl:hover { background: rgba(127,127,127,.12); }
+  #frame { border: 0; width: 100%; flex: 1; display: none; }
+  #status { display: flex; flex: 1; align-items: center; justify-content: center; color: #555; padding: 1rem; text-align: center; }
+  @media (prefers-color-scheme: dark) { body { background: #111; } #status { color: #999; } #bar { color: #ddd; } }
 </style>
 </head>
 <body>
+<header id="bar">
+  <span id="name"></span>
+  <span id="exp"></span>
+  <button id="dl" type="button">Download</button>
+</header>
 <div id="status">Decrypting…</div>
 <iframe id="frame" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" title="artifact"></iframe>
 <!-- inject:viewer-md.js -->
@@ -28,6 +38,14 @@
     var out = new Uint8Array(b.length);
     for (var i = 0; i < b.length; i++) out[i] = b.charCodeAt(i);
     return out;
+  }
+
+  function timeLeft(expEpoch) {
+    var s = expEpoch - Math.floor(Date.now() / 1000);
+    if (s <= 0) return "expired";
+    if (s < 3600) return Math.max(1, Math.round(s / 60)) + " min";
+    if (s < 172800) return Math.round(s / 3600) + " hours";
+    return Math.round(s / 86400) + " days";
   }
 
   var id = location.pathname.split("/").pop();
@@ -50,7 +68,23 @@
   }
 
   document.title = envelope.name;
+  document.getElementById("name").textContent = envelope.name;
+  var expEpoch = Number(res.headers.get("X-Expires-At") || 0);
+  if (expEpoch) document.getElementById("exp").textContent = "expires in " + timeLeft(expEpoch);
+  document.getElementById("dl").addEventListener("click", function () {
+    var mime = envelope.type === "html" ? "text/html" : "text/markdown";
+    var url = URL.createObjectURL(new Blob([envelope.content], { type: mime }));
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = envelope.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  });
+
   frame.srcdoc = envelope.type === "html" ? envelope.content : mdPage(envelope.name, renderMd(envelope.content));
+  document.getElementById("bar").style.display = "flex";
   statusEl.style.display = "none";
   frame.style.display = "block";
 })();
