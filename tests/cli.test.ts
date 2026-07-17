@@ -61,14 +61,15 @@ test("push signs a verifiable request and returns view + delete URLs", async () 
       return Response.json({ id: "abc123", deleteToken: "tok456" });
     },
   });
-  const config = loadConfig({ HOME: home, TINKER_SHARE_URL: `http://localhost:${server.port}` });
+  const base = `http://localhost:${server.port}`; // capture before stop(): port is gone afterwards
+  const config = loadConfig({ HOME: home, TINKER_SHARE_URL: base });
   const { viewUrl, deleteUrl } = await push("samples/notes.md", "1d", config);
   server.stop();
 
   expect(verified).toBe(true);
   expect(ttlSeen).toBe("1d");
-  expect(viewUrl.startsWith(`http://localhost:${server.port}/a/abc123#`)).toBe(true);
-  expect(deleteUrl).toBe(`http://localhost:${server.port}/d/abc123#tok456`);
+  expect(viewUrl.startsWith(`${base}/a/abc123#`)).toBe(true);
+  expect(deleteUrl).toBe(`${base}/d/abc123#tok456`);
   const envelope = await decryptEnvelope(received!, viewUrl.split("#")[1]);
   expect(envelope.type).toBe("md");
   expect(envelope.name).toBe("notes.md");
