@@ -71,7 +71,12 @@ tinker-share delete "https://…/d/<id>#<token>"   # delete early
 
 `push` prints a **view link** to share (also copied to your clipboard on macOS) and a **deletion link** shown only once. Keep that second one private.
 
-Only self-contained `.html`/`.md` files. The size cap is **20 MiB after encryption** — encryption adds roughly 5–10% to typical HTML/Markdown, so source files up to ~18 MB are safely inside it. Inline your assets — the viewer's CSP blocks every request an artifact makes on its own (scripts, fetches, images), so it can't silently phone home. The one exception: links the reader deliberately clicks open normally in a new tab.
+**Know the limits before you rely on it:**
+
+- Self-contained `.html`/`.md` files only — inline your assets. The viewer's CSP blocks every request an artifact makes on its own (scripts, fetches, images), so it can't silently phone home; links the reader deliberately clicks open normally in a new tab.
+- Size cap is **20 MiB after encryption** — encryption adds roughly 5–10% to typical HTML/Markdown, so source files up to ~18 MB are safely inside it.
+- **The link is the key.** Anyone who obtains the full URL can read the artifact until it expires; recipients can re-share it.
+- The server can't read content, but it sees **metadata**: sizes, timestamps, IPs, uploader names. And since browsers run whatever viewer page the server ships, a compromised server could serve key-stealing JavaScript — inherent to all in-browser crypto, and why you host it yourself. Details in the [threat model](GUIDE.md#threat-model).
 
 ## How it works
 
@@ -94,6 +99,20 @@ Only self-contained `.html`/`.md` files. The size cap is **20 MiB after encrypti
 The key rides in the URL **fragment** (`#…`), which [per web standards](https://www.rfc-editor.org/rfc/rfc3986#section-3.5) browsers keep client-side and never put in a request. It never reaches server logs, the CDN, or TLS traffic. The server only ever holds an opaque encrypted blob.
 
 For the full story, the [documentation](GUIDE.md) explains the encryption [in plain terms](GUIDE.md#the-encryption-in-plain-terms) and [precisely](GUIDE.md#the-encryption-precisely), walks through [why the operator can't decrypt](GUIDE.md#why-the-server-owner-cannot-decrypt-your-data) with a step you can verify yourself, and lays out an [honest threat model](GUIDE.md#threat-model).
+
+## Why Tinker?
+
+Plenty of tools share files or pastes; none quite covers "hand someone a rendered, encrypted, expiring artifact my agent just made":
+
+| | Rendered HTML/MD page | Client-side E2E encryption | Auto-expiry | Self-hosted | Uploads restricted | Agent-native CLI/skill |
+|---|---|---|---|---|---|---|
+| **Tinker** | ✅ both | ✅ | ✅ | ✅ | ✅ signed (Ed25519) | ✅ |
+| Firefox Send (†2020) | ❌ file downloads | ✅ | ✅ | ✅ | ❌ | ❌ |
+| PrivateBin | ⚠️ pastes, MD only | ✅ | ✅ | ✅ | ⚠️ optional | ❌ |
+| Object storage + presigned URL | ⚠️ if content-type set | ❌ | ⚠️ URL expires, object stays | ⚠️ cloud account | ✅ | ❌ |
+| GitHub secret Gist | ⚠️ MD only, no HTML | ❌ | ❌ | ❌ | ✅ | ⚠️ via `gh` |
+
+All of these are fine tools — Tinker just occupies the specific corner where a coding agent produces an HTML report and you want it viewable as a link, encrypted end-to-end, gone in a week, on infrastructure you run.
 
 ## For AI agents
 
