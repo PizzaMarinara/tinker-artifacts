@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun test
+
+  redis:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun test tests/redis.test.ts
+        env:
+          REDIS_URL: redis://localhost:6379
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t tinker-artifacts .
+      - name: Smoke-test the landing endpoint
+        run: |
+          docker run -d --name tinker -p 8080:8080 -e UPLOAD_KEYS= tinker-artifacts
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          docker logs tinker
+          exit 1
