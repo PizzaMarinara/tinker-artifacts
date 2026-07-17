@@ -23,7 +23,10 @@ export interface CoreConfig {
   defaultTtl?: string;
 }
 
-const MAX_BYTES = 20 * 1024 * 1024;
+// Cap on the uploaded encrypted blob (IV ‖ ciphertext), not the source file:
+// JSON-escaping in the envelope inflates typical HTML/MD by ~5–10%.
+// Kept under Cloudflare KV's 25 MiB value limit.
+export const MAX_BYTES = 20 * 1024 * 1024;
 const CREATED_WINDOW_S = 300;
 const MIN_TTL_S = 60;
 const MAX_TTL_S = 365 * 86400;

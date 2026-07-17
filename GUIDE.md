@@ -216,7 +216,7 @@ Deletes an artifact early, given its deletion link. No browser needed. Without t
 ## Limits
 
 - Self-contained `.html` / `.md` only. Inline your CSS/JS/images (data: URIs) — the viewer's CSP blocks every request an artifact makes on its own (subresources, scripted `fetch`, images, media), so artifacts can't silently phone home. Deliberate exception: links the **reader clicks** open normally in a new tab, so ordinary hyperlinks in shared reports keep working (see the threat model).
-- Max **20 MB** per artifact (server-enforced; also under Cloudflare KV's value cap).
+- Max **20 MiB** per *encrypted* artifact, server-enforced at the exact byte boundary (`MAX_BYTES` in [`server/core.ts`](server/core.ts); kept under Cloudflare KV's 25 MiB value cap). The encrypted upload is your source file plus JSON-escaping overhead — measured at ~8% for newline-heavy HTML — so plan on source files up to ~18 MB. Oversized uploads get an HTTP 413.
 - Markdown renders via a small built-in renderer (headings, lists, tables, code blocks, links); HTML renders as-is inside the sandboxed iframe.
 - Anyone with the full view link can read the artifact until it expires or is deleted.
 

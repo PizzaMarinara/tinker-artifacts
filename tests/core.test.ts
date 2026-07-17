@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { handle, parseDuration, type ArtifactMetadata, type CoreConfig, type Storage } from "../server/core";
+import { handle, MAX_BYTES, parseDuration, type ArtifactMetadata, type CoreConfig, type Storage } from "../server/core";
 import "../shared/sig.js";
 
 const tsig = (globalThis as any).tinkerSig;
@@ -115,7 +115,8 @@ test("ttl config: honored, invalid 400, inconsistent config 500", async () => {
 test("empty body 400, oversized 413 (even without Content-Length)", async () => {
   const { deps } = makeDeps();
   expect((await handle(await signedPut(new Uint8Array(0)), deps)).status).toBe(400);
-  expect((await handle(await signedPut(new Uint8Array(20 * 1024 * 1024 + 1)), deps)).status).toBe(413);
+  expect((await handle(await signedPut(new Uint8Array(MAX_BYTES)), deps)).status).toBe(200);
+  expect((await handle(await signedPut(new Uint8Array(MAX_BYTES + 1)), deps)).status).toBe(413);
 });
 
 test("GET returns body + X-Expires-At; 404 when missing; DELETE lifecycle", async () => {

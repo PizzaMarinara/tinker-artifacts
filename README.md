@@ -65,7 +65,7 @@ tinker-share delete "https://…/d/<id>#<token>"   # delete early
 
 `push` prints a **view link** to share (also copied to your clipboard on macOS) and a **deletion link** shown only once. Keep that second one private.
 
-Only self-contained `.html`/`.md` files, up to 20 MB. Inline your assets — the viewer's CSP blocks every request an artifact makes on its own (scripts, fetches, images), so it can't silently phone home. The one exception: links the reader deliberately clicks open normally in a new tab.
+Only self-contained `.html`/`.md` files. The size cap is **20 MiB after encryption** — encryption adds roughly 5–10% to typical HTML/Markdown, so source files up to ~18 MB are safely inside it. Inline your assets — the viewer's CSP blocks every request an artifact makes on its own (scripts, fetches, images), so it can't silently phone home. The one exception: links the reader deliberately clicks open normally in a new tab.
 
 ## How it works
 

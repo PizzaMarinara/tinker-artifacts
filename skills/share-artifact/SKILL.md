@@ -37,6 +37,6 @@ Use when the user asks to retract/remove a shared artifact. Needs the deletion l
 
 - HTTP 401 → key missing/unregistered/revoked (see setup step 3).
 - HTTP 400 with "invalid ttl" → relay the allowed values from the error.
-- HTTP 413 → file over 20 MB; slim the artifact.
+- HTTP 413 → encrypted upload over 20 MiB (source files up to ~18 MB fit); slim the artifact.
 - "Unsupported file type" → convert to a single self-contained .html or .md first.
 - Viewer shows "Decryption failed" → the link was truncated; re-send the full URL including the `#…` part.
