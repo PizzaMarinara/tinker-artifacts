@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import worker, { type Env } from "../server/worker";
+import worker, { type Env } from "../server/cf";
 
 const env: Env = {
   UPLOAD_KEYS: "",

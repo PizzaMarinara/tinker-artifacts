@@ -1,5 +1,5 @@
 name = "tinker-artifacts"
-main = "server/worker.ts"
+main = "server/cf.ts"
 compatibility_date = "2026-07-01"
 
 [[kv_namespaces]]

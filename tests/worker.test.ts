@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import worker, { parseDuration, type ArtifactMetadata, type Env } from "../server/worker";
+import worker, { type Env } from "../server/cf";
+import { parseDuration, type ArtifactMetadata } from "../server/core";
 import "../shared/sig.js";
 
 const tsig = (globalThis as any).tinkerSig;
