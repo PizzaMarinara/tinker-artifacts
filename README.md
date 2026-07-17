@@ -54,6 +54,8 @@ For Docker, Redis, TLS behind a reverse proxy, and adding more uploaders, see th
 
 ### Share something
 
+> **Not on npm yet.** Tinker currently installs from a source checkout (below); an npm release is planned.
+
 Install the CLI onto your `PATH` (from the checkout; after this the clone is no longer needed):
 
 ```sh
