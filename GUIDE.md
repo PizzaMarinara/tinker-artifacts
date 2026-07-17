@@ -196,7 +196,7 @@ CLI configuration lives in `~/.config/tinker-share/config` (written by `keygen`)
 
 ## CLI reference
 
-Install `tinker-share` onto your `PATH` by packing and globally installing the package (Bun symlinks the executable into `~/.bun/bin`):
+The `tinker-artifacts` package installs one command: `tinker-share`. Put it on your `PATH` by packing and globally installing the package (Bun symlinks the executable into `~/.bun/bin`):
 
 ```sh
 bun pm pack --destination /tmp

@@ -56,7 +56,7 @@ For Docker, Redis, TLS behind a reverse proxy, and adding more uploaders, see th
 
 > **Not on npm yet.** Tinker currently installs from a source checkout (below); an npm release is planned.
 
-Install the CLI onto your `PATH` (from the checkout; after this the clone is no longer needed):
+Install the CLI onto your `PATH` (from the checkout; after this the clone is no longer needed). The package is `tinker-artifacts`; the command it installs is `tinker-share`:
 
 ```sh
 bun pm pack --destination /tmp
