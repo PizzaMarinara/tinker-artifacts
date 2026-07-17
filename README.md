@@ -2,7 +2,7 @@
 
 **End-to-end-encrypted, self-expiring share links for HTML & Markdown artifacts. Self-hosted.**
 
-![license](https://img.shields.io/badge/license-MIT-blue) ![runtime](https://img.shields.io/badge/runtime-Bun-black) ![deploy](https://img.shields.io/badge/deploy-Cloudflare%20%7C%20self--host-orange) ![deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen)
+[![CI](https://github.com/PizzaMarinara/tinker-artifacts/actions/workflows/ci.yml/badge.svg)](https://github.com/PizzaMarinara/tinker-artifacts/actions/workflows/ci.yml) ![license](https://img.shields.io/badge/license-MIT-blue) ![runtime](https://img.shields.io/badge/runtime-Bun-black) ![deploy](https://img.shields.io/badge/deploy-Cloudflare%20%7C%20self--host-orange) ![deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen)
 
 ```sh
 $ tinker-share push report.html --ttl 7d
