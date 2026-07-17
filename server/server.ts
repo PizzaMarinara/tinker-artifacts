@@ -35,7 +35,17 @@ if (import.meta.main) {
     }, 60_000);
     (timer as { unref?: () => void }).unref?.();
   }
-  const port = Number(process.env.PORT ?? 8080);
-  Bun.serve({ port, idleTimeout: 60, fetch: (req) => handle(req, { storage, config }) });
+  if (!config.uploadKeys) {
+    console.warn("WARNING: UPLOAD_KEYS is unset — every upload will be rejected (401). Register a key and set it.");
+  }
+  const port = Number(process.env.PORT || 8080);
+  // Cap request bodies so an unauthenticated client can't force the server to
+  // buffer a huge upload before core's 20 MB check runs (Bun defaults to 128 MB).
+  Bun.serve({
+    port,
+    idleTimeout: 60,
+    maxRequestBodySize: 20 * 1024 * 1024 + 65536,
+    fetch: (req) => handle(req, { storage, config }),
+  });
   console.log(`tinker-artifacts listening on :${port} (storage: ${process.env.STORAGE ?? "sqlite"})`);
 }

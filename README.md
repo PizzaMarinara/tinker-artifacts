@@ -20,7 +20,7 @@ Design goals:
 - **Harness-agnostic** — the client is one bun script with zero dependencies; anything that can run a shell command can share an artifact.
 - **Temporary** — every artifact has a TTL (1h / 1d / 7d / 30d) and is deleted by the storage layer itself, not by a cleanup job you have to remember to run.
 - **Private by construction** — the server stores ciphertext it cannot decrypt. Not "we promise not to look" — *cannot*, and you can verify it (see below).
-- **Boring to operate** — ~500 lines total, no database, no build pipeline, no runtime dependencies. Free-tier Cloudflare covers personal use.
+- **Boring to operate** — small, no build pipeline, no runtime dependencies, and no external services in the default setups (Cloudflare KV, or a single SQLite file when self-hosted). Free-tier Cloudflare covers personal use.
 
 ## How it works
 
@@ -74,7 +74,7 @@ This is the claim that matters, so here is the argument piece by piece — each 
 
 1. **Encryption happens before upload.** The CLI encrypts locally and the HTTP request body contains only `IV ‖ ciphertext` — grep [`cli/tinker-share.ts`](cli/tinker-share.ts): the only thing `fetch` ever sends is the encrypted blob. The key variable is never serialized into any request.
 2. **The key lives only in the fragment, and fragments never leave the client.** [RFC 3986 §3.5](https://www.rfc-editor.org/rfc/rfc3986#section-3.5) and the [WHATWG URL/Fetch standards](https://fetch.spec.whatwg.org/) define the fragment as client-side: browsers remove it from the request line of every HTTP request and from the `Referer` header. It doesn't appear in server access logs, CDN logs, or TLS traffic — it is never transmitted at all. (The viewer additionally sets `Referrer-Policy: no-referrer` and `noindex`, as belt-and-suspenders.)
-3. **The server code has no decryption path.** [`server/worker.ts`](server/worker.ts) is one file; read all of it. It stores bytes, returns bytes, and serves a static page. It imports no crypto, receives no key, and has nowhere to get one.
+3. **The server code has no decryption path.** The request logic is one small file, [`server/core.ts`](server/core.ts) (the entries [`server/cf.ts`](server/cf.ts) and [`server/server.ts`](server/server.ts) just wire it to storage); read all of it. It stores bytes, returns bytes, and serves a static page. It imports no crypto beyond hashing a delete token, receives no key, and has nowhere to get one.
 4. **The key space is not guessable.** 256-bit random keys from a CSPRNG; brute force is not a conversation.
 5. **Verify it yourself, live.** Push an artifact, then fetch what the server has:
 
@@ -200,7 +200,7 @@ Each `PUT` carries RFC 9421 `Signature-Input`/`Signature` headers over `@method`
 ## Limits
 
 - Self-contained `.html` / `.md` only (inline your assets; the viewer's CSP blocks external requests — a feature: artifacts can't phone home).
-- Max 20 MB per artifact (KV value cap).
+- Max 20 MB per artifact (server-enforced; also under Cloudflare KV's value cap).
 - Anyone with the full view link can read the artifact until it expires or is deleted.
 
 ## Develop

@@ -215,3 +215,10 @@ test("unknown routes 404", async () => {
   const { env } = makeEnv();
   expect((await worker.fetch(new Request("https://share.test/whatever"), env)).status).toBe(404);
 });
+
+test("GET 404s when a KV value exists but has no metadata (kvStorage null seam)", async () => {
+  const { env, store } = makeEnv();
+  // Simulate a legacy/metadata-less entry: value present, metadata null.
+  store.set("legacy", { value: new TextEncoder().encode("x").buffer, expirationTtl: 3600, metadata: null as any });
+  expect((await worker.fetch(new Request("https://share.test/api/artifacts/legacy"), env)).status).toBe(404);
+});

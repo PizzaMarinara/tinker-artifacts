@@ -2,6 +2,7 @@ node_modules
 .git
 .wrangler
 .dev.vars
+.env
 .superpowers
 tinker.db
 *.db
