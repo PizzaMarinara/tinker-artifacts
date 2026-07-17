@@ -141,7 +141,7 @@ test("GET returns body + X-Expires-At; 404 when missing; DELETE lifecycle", asyn
 
 test("pages served; unknown routes 404", async () => {
   const { deps } = makeDeps();
-  for (const [path, needle] of [["/a/x", "renderMd"], ["/d/x", "X-Delete-Token"], ["/", "tinker-artifacts"]] as const) {
+  for (const [path, needle] of [["/a/x", "renderMd"], ["/d/x", "X-Delete-Token"], ["/", "<title>Tinker</title>"]] as const) {
     const res = await handle(new Request(`https://share.test${path}`), deps);
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Security-Policy")).toContain("connect-src 'self'");

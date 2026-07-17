@@ -37,10 +37,16 @@ test("GET /d/:id serves the delete confirm page with CSP", async () => {
   expect(html).toContain("X-Delete-Token");
 });
 
-test("GET / serves the landing page", async () => {
+test("GET / serves the landing page with name, flow, and trust link", async () => {
   const res = await worker.fetch(new Request("https://share.test/"), env);
   expect(res.status).toBe(200);
-  expect(await res.text()).toContain("tinker-artifacts");
+  const html = await res.text();
+  expect(html).toContain("<title>Tinker</title>");
+  expect(html).toContain("<main>");
+  expect(html).toContain("Encrypted locally");
+  expect(html).toContain("tinker-share push");
+  expect(html).toContain("threat model");
+  expect(html).toContain("github.com/PizzaMarinara/tinker-artifacts");
 });
 
 test("generated pages are in sync with their sources", async () => {
