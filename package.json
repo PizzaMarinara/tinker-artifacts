@@ -6,7 +6,8 @@
     "gen": "bun scripts/gen-pages.ts",
     "dev": "bun run gen && bunx wrangler dev",
     "deploy": "bun run gen && bunx wrangler deploy",
-    "smoke": "bun scripts/smoke.ts"
+    "smoke": "bun scripts/smoke.ts",
+    "start": "bun run gen && bun server/server.ts"
   },
   "devDependencies": {
     "wrangler": "^4"
