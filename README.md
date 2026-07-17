@@ -13,7 +13,7 @@ Send that link to anyone. They open it, the page decrypts in their browser, and 
 
 Coding agents (Claude Code, Codex, and friends) increasingly produce **artifacts**: self-contained HTML reports, dashboards, and Markdown write-ups. Sharing them usually means either a hosted service you don't control, or pasting files around by hand.
 
-tinker-artifacts is the third option: a tiny sharing service you deploy yourself (a single Cloudflare Worker), a single-file CLI any agent or shell can call, and a [skill](skill/SKILL.md) that teaches agents to use it. The design copies the model popularized by [wormhole.app](https://wormhole.app/): **temporary by default, encrypted end-to-end, shareable with one link**.
+tinker-artifacts is the third option: a tiny sharing service you deploy yourself (a Cloudflare Worker, or a self-hosted server on any box), a single-file CLI any agent or shell can call, and a [skill](skill/SKILL.md) that teaches agents to use it. The design copies the model popularized by [wormhole.app](https://wormhole.app/): **temporary by default, encrypted end-to-end, shareable with one link**.
 
 Design goals:
 
@@ -111,7 +111,11 @@ Every push returns two links:
 - **View link** `…/a/<id>#<key>` — share it; the part after `#` decrypts in the recipient's browser.
 - **Deletion link** `…/d/<id>#<token>` — KEEP PRIVATE. Opening it deletes the artifact immediately, before its scheduled expiry. It is shown once at upload; anyone holding it can delete (and that's the only way to delete early). Like the view key, the token travels in the URL fragment and never reaches server logs; the server stores only its SHA-256 hash.
 
-## Deploy (once)
+## Deploy
+
+Two supported ways to run the server. Both share the same code, auth, and E2E model; pick by whether you want zero-ops serverless or your own box.
+
+### Option A — Cloudflare Workers (serverless, zero maintenance)
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/PizzaMarinara/tinker-artifacts)
 *(button works once this repo is public; it still needs the `keygen` + `UPLOAD_KEYS` steps below)*
@@ -126,7 +130,38 @@ bunx wrangler secret put UPLOAD_KEYS          # paste that line (comma-separate 
 bun run deploy
 ```
 
-To register another person/machine: they run `keygen`, send you the printed line, you append it (comma-separated) and re-run `wrangler secret put UPLOAD_KEYS`. Revoke by removing their line.
+Storage is Workers KV with native TTL expiry — nothing to clean up.
+
+### Option B — Self-hosted (your VPS, homelab, or company box)
+
+Runs anywhere [bun](https://bun.sh) or Docker runs. Default storage is a single SQLite file — no external services.
+
+```sh
+bun install
+cp .env.example .env
+bun cli/tinker-share.ts keygen <your-name>    # prints "<your-name>:<pubkey>"; put it in .env as UPLOAD_KEYS
+bun run start                                 # serves on :8080 (PORT to change)
+```
+
+Or with Docker (SQLite persisted in a volume):
+
+```sh
+docker build -t tinker-artifacts .
+docker run -d -p 8080:8080 -v tinker-data:/data \
+  -e UPLOAD_KEYS="<your-name>:<pubkey>" \
+  tinker-artifacts
+```
+
+Put a TLS-terminating reverse proxy (Caddy, nginx, Traefik) in front for HTTPS, and set `TINKER_SHARE_URL` on the CLI to that public URL.
+
+**Storage backends** (`STORAGE` env):
+
+| `STORAGE` | Needs | TTL cleanup | Use when |
+|---|---|---|---|
+| `sqlite` (default) | just a file (`SQLITE_PATH`) | in-process sweep every 60 s + lazy-on-read | single instance — homelab, one VPS |
+| `redis` | a Redis/Valkey server (`REDIS_URL`) | native key expiry | multiple instances behind a load balancer, or you already run Redis |
+
+All server config is environment variables (see `.env.example`): `UPLOAD_KEYS`, `TTL_OPTIONS`, `DEFAULT_TTL`, `PORT`, `STORAGE`, `SQLITE_PATH`, `REDIS_URL`. Register more uploaders by appending comma-separated `name:pubkey` pairs to `UPLOAD_KEYS`; revoke by removing one.
 
 ## Configure the CLI
 
@@ -174,6 +209,7 @@ Each `PUT` carries RFC 9421 `Signature-Input`/`Signature` headers over `@method`
 cp .dev.vars.example .dev.vars
 bun cli/tinker-share.ts keygen dev        # paste printed line into .dev.vars
 bun run dev                               # wrangler dev on :8787
+bun run start                             # OR: self-host server on :8080 (bun:sqlite)
 bun test                                  # unit tests
 TINKER_SHARE_URL=http://localhost:8787 bun run smoke   # full lifecycle vs the dev server
 ```
