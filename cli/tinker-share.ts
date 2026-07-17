@@ -133,7 +133,7 @@ export async function push(
   const content = await Bun.file(file).text();
   const name = file.split("/").pop()!;
   const { blob, key } = await encryptEnvelope({ type, name, content });
-  const query = ttl ? `?ttl=${ttl}` : "";
+  const query = ttl ? `?ttl=${encodeURIComponent(ttl)}` : "";
   const headers = await signHeaders("PUT", "/api/artifacts", query === "" ? "?" : query, blob, config);
   const res = await fetch(`${config.url}/api/artifacts${query}`, {
     method: "PUT",

@@ -146,7 +146,7 @@ tinker-share push notes.md --ttl 1h      # any TTL your deployment allows
 tinker-share delete "https://…/d/<id>#<token>"   # early deletion, no browser needed
 ```
 
-`push` prints the view link (also copied to your clipboard) and the deletion link — the deletion link is shown only this once.
+`push` prints the view link (also copied to your clipboard on macOS) and the deletion link — the deletion link is shown only this once.
 
 ## Retention
 

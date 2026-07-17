@@ -1,5 +1,5 @@
 // Minimal Markdown renderer for the artifact viewer.
-// Inlined into viewer.html by scripts/gen-viewer.ts; tests import it and use
+// Inlined into viewer.html by scripts/gen-pages.ts; tests import it and use
 // the globalThis exports (an inline <script> cannot use ESM exports).
 
 function escapeHtml(s) {

@@ -122,6 +122,16 @@ test("missing, empty, or malformed UPLOAD_KEYS fails closed", async () => {
   expect((await worker.fetch(await signedPut(BODY), makeEnv({ UPLOAD_KEYS: "" }).env)).status).toBe(401);
   expect((await worker.fetch(await signedPut(BODY), makeEnv({ UPLOAD_KEYS: undefined }).env)).status).toBe(401);
   expect((await worker.fetch(await signedPut(BODY), makeEnv({ UPLOAD_KEYS: "garbage-no-colon" }).env)).status).toBe(401);
+  // duplicate uploader name must fail closed (not silently shadow the earlier key)
+  const dup = `test:${TEST_PUB},test:${TEST_PUB}`;
+  expect((await worker.fetch(await signedPut(BODY), makeEnv({ UPLOAD_KEYS: dup }).env)).status).toBe(401);
+});
+
+test("oversized body is rejected before auth even with a lying Content-Length", async () => {
+  const { env } = makeEnv();
+  const big = new Uint8Array(20 * 1024 * 1024 + 1);
+  const req = await signedPut(big); // signedPut sets no Content-Length; body cap must still apply
+  expect((await worker.fetch(req, env)).status).toBe(413);
 });
 
 test("ttl honored; invalid ttl 400 lists allowed values", async () => {

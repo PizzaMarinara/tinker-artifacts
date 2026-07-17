@@ -69,13 +69,21 @@ function parseUploadKeys(raw: string | undefined): Map<string, string> {
   if (!raw) return map;
   for (const pair of raw.split(",")) {
     const idx = pair.indexOf(":");
-    if (idx < 1) return new Map();
+    if (idx < 1) return failClosed("entry has no name:key form");
     const name = pair.slice(0, idx).trim();
     const key = pair.slice(idx + 1).trim();
-    if (!/^[A-Za-z0-9_.-]{1,64}$/.test(name) || !/^[A-Za-z0-9_-]{43}$/.test(key)) return new Map();
+    if (!/^[A-Za-z0-9_.-]{1,64}$/.test(name) || !/^[A-Za-z0-9_-]{43}$/.test(key)) {
+      return failClosed(`entry "${name}" has an invalid name or public key`);
+    }
+    if (map.has(name)) return failClosed(`duplicate uploader name "${name}"`);
     map.set(name, key);
   }
   return map;
+}
+
+function failClosed(reason: string): Map<string, string> {
+  console.error(`UPLOAD_KEYS malformed (${reason}) — rejecting all uploads`);
+  return new Map();
 }
 
 // Returns the authenticated keyid, or null (any failure — caller returns one generic 401).
@@ -137,6 +145,9 @@ export default {
         return Response.json({ error: "too large" }, { status: 413 });
       }
       const body = await request.arrayBuffer();
+      // Enforce the size cap on the actual body before spending SHA-256/Ed25519
+      // work on an unauthenticated request (Content-Length can lie or be absent).
+      if (body.byteLength > MAX_BYTES) return Response.json({ error: "too large" }, { status: 413 });
       const uploader = await verifySignedPut(request, new Uint8Array(body), url, env);
       if (!uploader) return Response.json({ error: "unauthorized" }, { status: 401 });
       const ttl = url.searchParams.get("ttl") ?? cfg.def;
@@ -145,7 +156,6 @@ export default {
       }
       const expirationTtl = parseDuration(ttl)!;
       if (body.byteLength === 0) return Response.json({ error: "empty body" }, { status: 400 });
-      if (body.byteLength > MAX_BYTES) return Response.json({ error: "too large" }, { status: 413 });
       const id = newId();
       const deleteToken = newId();
       const delHash = await sha256b64(new TextEncoder().encode(deleteToken));
