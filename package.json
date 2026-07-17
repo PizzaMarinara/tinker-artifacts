@@ -1,7 +1,18 @@
 {
   "name": "tinker-artifacts",
   "version": "0.1.0",
-  "description": "End-to-end-encrypted, self-expiring share links for HTML & Markdown artifacts. Self-hosted.",
+  "description": "End-to-end-encrypted, self-expiring share links for HTML & Markdown artifacts. Self-hosted. Requires Bun.",
+  "keywords": [
+    "encryption",
+    "end-to-end-encryption",
+    "file-sharing",
+    "share-links",
+    "artifacts",
+    "cloudflare-workers",
+    "bun",
+    "cli",
+    "ai-agents"
+  ],
   "license": "MIT",
   "private": true,
   "type": "module",
